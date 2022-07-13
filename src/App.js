@@ -1,25 +1,36 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 function App() {
-  const [toDo, setToDo] = useState("");
-  const [toDoList, setToDoList] = useState([]);
-  function onSubmit(event) {
-    event.preventDefault();
-    if (toDo === "")
-      return;
-    setToDo("");
-    setToDoList(prev => [toDo, ...prev]);
+  const [loading, setLoading] = useState(true);
+  const [coins, setCoins] = useState([]);
+  const [balance, setBalance] = useState("");
+  const [coinSelected, setCoinSelected] = useState(null);
+  useEffect(() => {
+    const fetchCoins = async () => {
+      const response = await fetch("https://api.coinpaprika.com/v1/tickers");
+      const json = await response.json();
+      setCoins(json);
+      setLoading(false);
+    }
+    fetchCoins();
+  }, []);
+  function onChange(event) {
+    setBalance(event.target.value);
   }
   return (
     <div>
-      <h1>My To Dos ({toDoList.length})</h1>
-      <form onSubmit={onSubmit}>
-        <input value={toDo} onChange={event => setToDo(event.target.value)} type="text" placeholder="Write your to do..." />
-        <button>Add To Do</button>
-      </form>
-      <hr />
-      <ul>
-        {toDoList.map((item, idx) => <li key={idx}>{item}</li>)}
-      </ul>
+      <h1>The Coins! {loading ? "" : `(${coins.length})`}</h1>
+      <input type="number" placeholder="USDs you have" value={balance} onChange={onChange} />
+      <div>
+        {loading ? <strong>Loading...</strong> :
+          (<select onChange={event => setCoinSelected(event.target.value)}>
+            <option key="" value="">Select a coin</option>
+            {coins.map(coin => {
+              //console.log({ symbol: coin.symbol, price: coin.quotes.USD.price });
+              return <option key={coin.id} value={`${coin.symbol} ${coin.quotes.USD.price}`}>{coin.name} ({coin.symbol}): {coin.quotes.USD.price} USD</option>
+            })}
+          </select>)}
+      </div>
+      {coinSelected && balance ? `${balance} USD is ${balance / coinSelected.split(' ')[1]} ${coinSelected.split(' ')[0]}` : null}
     </div>
   );
 }
